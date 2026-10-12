@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#D90429">
+  <title>Pujo Parikrama – Pandal Hopping</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@600;700&family=Hind+Siliguri:wght@400;500;600&display=swap">
+  <style>
+    :root {
+      --night: #120D24;
+      --panel: #1C1536;
+      --panel2: #251C47;
+      --line: #3A2E69;
+      --sindoor: #D90429;
+      --marigold: #FFB703;
+      --ivory: #F7EFE2;
+      --mute: #A79CC9;
+      --ok: #3DDC97;
+      --warn: #FFB703;
+      --bad: #FF5C6C;
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--night);
+      color: var(--ivory);
+      font-family: "Hind Siliguri", system-ui, sans-serif;
+      font-size: 16px
+    }
+
+    h1,
+    h2,
+    h3,
+    .brand {
+      font-family: "Baloo Da 2", "Hind Siliguri", system-ui, sans-serif;
+      font-weight: 700
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: inherit
+    }
+
+    [hidden] {
+      display: none !important
+    }
+
+    .muted {
+      color: var(--mute);
+      font-size: .88rem
+    }
+
+    /* ---------- full-screen gates (setup / join / admin login) ---------- */
+    .gate {
+      min-height: 100%;
+      padding: calc(24px + var(--safe-t)) 20px calc(24px + var(--safe-b));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 460px;
+      margin: auto
+    }
+
+    .gate .brand {
+      font-size: 2.3rem;
+      line-height: 1.05
+    }
+
+    .gate .bn {
+      color: var(--marigold);
+      font-size: 1.15rem;
+      margin-bottom: 6px
+    }
+
+    .gate p {
+      margin: 10px 0 18px;
+      line-height: 1.5
+    }
+
+    .field {
+      display: block;
+      margin-bottom: 14px
+    }
+
+    .field span {
+      display: block;
+      font-size: .85rem;
+      color: var(--mute);
+      margin-bottom: 5px
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: var(--panel);
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 13px;
+      outline: none
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--marigold)
+    }
+
+    .btn {
+      background: var(--sindoor);
+      border: 0;
+      border-radius: 10px;
+      padding: 13px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%
+    }
+
+    .btn.alt {
+      background: var(--panel2);
+      border: 1px solid var(--line)
+    }
+
+    .btn.sm {
+      width: auto;
+      padding: 8px 12px;
+      font-size: .9rem
+    }
+
+    .btn:disabled {
+      opacity: .5
+    }
+
+    .consent {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--marigold);
+      border-radius: 10px;
+      padding: 13px;
+      margin: 6px 0 16px;
+      font-size: .92rem;
+      line-height: 1.45
+    }
+
+    .consent label {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 10px;
+      cursor: pointer
+    }
+
+    .consent input {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      accent-color: var(--sindoor)
+    }
+
+    .err {
+      color: var(--bad);
+      min-height: 1.3em;
+      margin: 8px 0;
+      font-size: .92rem
+    }
+
+    .linkbtn {
+      background: none;
+      border: 0;
+      color: var(--mute);
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 18px;
+      align-self: center
+    }
+
+    code {
+      background: var(--panel2);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: .88em
+    }
+
+    /* ---------- app shell ---------- */
+    #app {
+      height: 100%;
+      display: flex;
+      flex-direction: column
+    }
+
+    header.top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: calc(8px + var(--safe-t)) 12px 8px;
+      background: var(--panel);
+      border-bottom: 2px dashed var(--marigold)
+    }
+
+    header.top .brand {
+      font-size: 1.2rem;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .chip {
+      font-size: .8rem;
+      padding: 5px 10px;
+      border-radius: 99px;
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--mute)
+    }
+
+    .dot.ok {
+      background: var(--ok)
+    }
+
+    .dot.warn {
+      background: var(--warn)
+    }
+
+    .dot.bad {
+      background: var(--bad)
+    }
+
+    main {
+      flex: 1;
+      position: relative;
+      min-height: 0
+    }
+
+    .tab {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      padding: 14px 14px 20px;
+      display: none
+    }
+
+    .tab.on {
+      display: block
+    }
+
+    #tab-map {
+      padding: 0;
+      overflow: hidden
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      background: #1a1a2e
+    }
+
+    nav.bottom {
+      display: flex;
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      padding-bottom: var(--safe-b)
+    }
+
+    nav.bottom button {
+      flex: 1;
+      background: none;
+      border: 0;
+      padding: 9px 2px 8px;
+      color: var(--mute);
+      font-size: .72rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      position: relative
+    }
+
+    nav.bottom button b {
+      font-size: 1.25rem;
+      font-weight: 400
+    }
+
+    nav.bottom button.on {
+      color: var(--marigold)
+    }
+
+    .badge {
+      position: absolute;
+      top: 4px;
+      right: calc(50% - 22px);
+      background: var(--sindoor);
+      color: #fff;
+      border-radius: 99px;
+      font-size: .65rem;
+      min-width: 17px;
+      height: 17px;
+      display: grid;
+      place-items: center;
+      padding: 0 4px
+    }
+
+    /* floating map controls */
+    .fab {
+      position: absolute;
+      right: 12px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    .fab button {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px #0008
+    }
+
+    .fab button.on {
+      background: var(--sindoor)
+    }
+
+    .pickbar {
+      position: absolute;
+      left: 12px;
+      right: 70px;
+      top: 12px;
+      z-index: 500;
+      background: var(--marigold);
+      color: #2a1a00;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .pickbar button {
+      background: #2a1a00;
+      color: var(--marigold);
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 10px
+    }
+
+    /* leaflet pins */
+    .pin {
+      width: 32px;
+      height: 32px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      display: grid;
+      place-items: center;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px #0009
+    }
+
+    .pin>i {
+      transform: rotate(45deg);
+      font-style: normal;
+      font-size: 16px
+    }
+
+    .pin.pandal {
+      background: var(--sindoor)
+    }
+
+    .fr {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      color: #111;
+      font-family: "Baloo Da 2", sans-serif;
+      box-shadow: 0 2px 8px #000a
+    }
+
+    .fr.stale {
+      filter: grayscale(1);
+      opacity: .6
+    }
+
+    .me {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 6px #3b82f655
+    }
+
+    .ftip {
+      background: var(--panel) !important;
+      color: var(--ivory) !important;
+      border: 1px solid var(--line) !important;
+      font-weight: 600;
+      box-shadow: none !important
+    }
+
+    .ftip:before {
+      display: none
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background: var(--panel);
+      color: var(--ivory)
+    }
+
+    .leaflet-popup-content {
+      margin: 12px 14px;
+      line-height: 1.4
+    }
+
+    .leaflet-container a {
+      color: var(--marigold)
+    }
+
+    .pp .row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .pp button {
+      background: var(--sindoor);
+      border: 0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer
+    }
+
+    .leaflet-control-attribution {
+      background: #120D24cc !important;
+      color: var(--mute) !important
+    }
+
+    .leaflet-control-attribution a {
+      color: var(--mute) !important
+    }
+
+    /* lists */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px
+    }
+
+    .card h3 {
+      font-size: 1.05rem
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center
+    }
+
+    .row.sp {
+      justify-content: space-between
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 6px
+    }
+
+    .chips button {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      padding: 6px 13px;
+      white-space: nowrap;
+      cursor: pointer;
+      color: var(--mute)
+    }
+
+    .chips button.on {
+      background: var(--sindoor);
+      color: #fff;
+      border-color: var(--sindoor)
+    }
+
+    .notice {
+      background: var(--panel);
+      border-left: 4px solid var(--marigold);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: .88rem;
+      color: var(--mute);
+      margin-bottom: 12px;
+      line-height: 1.4
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px
+    }
+
+    .ph {
+      background: var(--panel);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line)
+    }
+
+    .ph img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: var(--panel2)
+    }
+
+    .ph div {
+      padding: 7px 9px;
+      font-size: .8rem;
+      color: var(--mute)
+    }
+
+    /* chat */
+    .thread {
+      display: flex;
+      flex-direction: column;
+      height: 100%
+    }
+
+    .msgs {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 4px 0 10px
+    }
+
+    .bub {
+      max-width: 80%;
+      padding: 8px 12px;
+      border-radius: 14px;
+      line-height: 1.35;
+      word-wrap: break-word;
+      white-space: pre-wrap
+    }
+
+    .bub.me {
+      align-self: flex-end;
+      background: var(--sindoor);
+      border-bottom-right-radius: 4px
+    }
+
+    .bub.them {
+      align-self: flex-start;
+      background: var(--panel2);
+      border-bottom-left-radius: 4px
+    }
+
+    .bub small {
+      display: block;
+      opacity: .6;
+      font-size: .7rem;
+      margin-top: 3px
+    }
+
+    .composer {
+      display: flex;
+      gap: 8px
+    }
+
+    .composer input {
+      flex: 1
+    }
+
+    .composer button {
+      width: auto
+    }
+
+    #tab-chat {
+      display: none
+    }
+
+    #tab-chat.on {
+      display: flex;
+      flex-direction: column
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(76px + var(--safe-b));
+      transform: translateX(-50%);
+      background: var(--ivory);
+      color: #1b1130;
+      padding: 10px 16px;
+      border-radius: 10px;
+      z-index: 2000;
+      max-width: 90%;
+      font-weight: 500;
+      box-shadow: 0 4px 18px #000a
+    }
+
+    dialog {
+      background: var(--panel);
+      color: var(--ivory);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      width: min(440px, 92vw);
+      margin: auto
+    }
+
+    dialog::backdrop {
+      background: #000b
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem
+    }
+
+    td,
+    th {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top
+    }
+
+    @media (prefers-reduced-motion:no-preference) {
+
+      .pin,
+      .fr {
+        transition: transform .15s
+      }
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--marigold);
+      outline-offset: 2px
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============ GATE: not configured ============ -->
+  <div id="g-setup" class="gate" hidden>
+    <h1 class="brand">Almost there</h1>
+    <p>Open <code>index.html</code>, and paste your Supabase <b>Project URL</b> and <b>anon key</b> into the two lines
+      at the top of the script. Steps are in <code>README.md</code>.</p>
+  </div>
+
+  <!-- ============ GATE: join ============ -->
+  <div id="g-join" class="gate" hidden>
+    <div class="bn">শারদোৎসব ২০২৬</div>
+    <h1 class="brand">Pujo Parikrama</h1>
+    <p>Pandal hopping with your friends. Pick the name your group will know you by. After this, only the admin can
+      change it.</p>
+    <label class="field"><span>Your name</span><input id="j-name" maxlength="40" autocomplete="off"
+        placeholder="e.g. Riya"></label>
+    <label class="field"><span>Join code (from the admin)</span><input id="j-code" autocomplete="off"></label>
+    <div class="consent">
+      <b>What the admin can see</b><br>
+      Your live location while this app is open, the photos you add, and your private messages. All of it is stored for
+      safety and audit. Other friends cannot see any of it.
+      <br>You can pause location sharing at any time with the button at the top of the app.
+      <label><input type="checkbox" id="j-ok"> I understand and agree.</label>
+    </div>
+    <div class="err" id="j-err"></div>
+    <button class="btn" id="j-go">Join the group</button>
+    <button class="linkbtn" id="j-admin">I am the admin</button>
+  </div>
+
+  <!-- ============ GATE: admin login ============ -->
+  <div id="g-admin" class="gate" hidden>
+    <h1 class="brand">Admin sign in</h1>
+    <p class="muted">Use the email and password you created in Supabase.</p>
+    <label class="field"><span>Email</span><input id="a-email" type="email" autocomplete="username"></label>
+    <label class="field"><span>Password</span><input id="a-pass" type="password"
+        autocomplete="current-password"></label>
+    <div class="err" id="a-err"></div>
+    <button class="btn" id="a-go">Sign in</button>
+    <button class="linkbtn" id="a-back">Back</button>
+  </div>
+
+  <!-- ============ APP ============ -->
+  <div id="app" hidden>
+    <header class="top">
+      <div class="brand" id="hdr-title">Pujo Parikrama</div>
+      <div class="chip" id="gps-chip" title="GPS accuracy"><span class="dot" id="gps-dot"></span><span
+          id="gps-txt">Locating</span></div>
+      <div class="chip" id="share-chip" title="Pause or resume sharing"><span class="dot ok" id="share-dot"></span><span
+          id="share-txt">Sharing</span></div>
+    </header>
+
+    <main>
+      <section class="tab on" id="tab-map">
+        <div id="map"></div>
+        <div class="pickbar" id="pickbar" hidden><span>Tap the map to place the pandal</span><button
+            id="pick-cancel">Cancel</button></div>
+        <div class="fab">
+          <button id="b-locate" title="Centre on me">◎</button>
+          <button id="b-add" title="Add a pandal" hidden>＋</button>
+          <button id="b-friends" title="Show friends (admin)" hidden>👥</button>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-pandals">
+        <input id="p-search" placeholder="Search pandals or areas" style="margin-bottom:10px">
+        <div class="chips" id="p-zones"></div>
+        <div id="p-list"></div>
+      </section>
+
+      <section class="tab" id="tab-photos">
+        <div class="notice">Photos are saved only when you are within 150 m of a pandal. Only you and the admin can see
+          them.</div>
+        <button class="btn" id="ph-add" style="margin-bottom:14px">Add photo at nearest pandal</button>
+        <div id="ph-grid" class="grid"></div>
+        <input type="file" id="file" accept="image/*" capture="environment" hidden>
+      </section>
+
+      <section class="tab" id="tab-chat">
+        <div id="chat-list" style="overflow:auto">
+          <div class="notice">Messages are private between you and the friend you pick. The admin can read all messages
+            for safety and audit.</div>
+          <div id="chat-people"></div>
+        </div>
+        <div class="thread" id="chat-thread" hidden>
+          <div class="row" style="margin-bottom:8px"><button class="btn alt sm" id="chat-back">Back</button>
+            <h3 id="chat-with"></h3>
+          </div>
+          <div class="msgs" id="msgs"></div>
+          <div class="composer"><input id="m-in" placeholder="Message" autocomplete="off"><button class="btn sm"
+              id="m-send">Send</button></div>
+        </div>
+      </section>
+
+      <section class="tab" id="tab-admin">
+        <div class="chips" id="ad-sub">
+          <button data-s="friends" class="on">Friends live</button>
+          <button data-s="pandals">Pandals</button>
+          <button data-s="msgs">All messages</button>
+          <button data-s="photos">All photos</button>
+          <button data-s="export">Export</button>
+        </div>
+        <div id="ad-body"></div>
+      </section>
+    </main>
+
+    <nav class="bottom" id="nav">
+      <button data-t="map" class="on"><b>🗺</b>Map</button>
+      <button data-t="pandals"><b>🪔</b>Pandals</button>
+      <button data-t="photos"><b>📷</b>Photos</button>
+      <button data-t="chat"><b>💬</b>Chat<span class="badge" id="chat-badge" hidden>0</span></button>
+      <button data-t="admin" id="nav-admin" hidden><b>🛡</b>Admin</button>
+    </nav>
+  </div>
+
+  <!-- pandal form (admin) -->
+  <dialog id="pform">
+    <h3 id="pf-title" style="margin-bottom:12px">Add pandal</h3>
+    <label class="field"><span>Name</span><input id="pf-name" maxlength="120"></label>
+    <label class="field"><span>Area</span><input id="pf-area" maxlength="80" placeholder="e.g. Shyambazar"></label>
+    <label class="field"><span>Zone</span>
+      <select id="pf-zone">
+        <option value="north">North Kolkata</option>
+        <option value="south">South Kolkata</option>
+        <option value="central">Central Kolkata</option>
+        <option value="east">East Kolkata</option>
+        <option value="howrah">Howrah</option>
+        <option value="others">Others</option>
+      </select></label>
+    <label class="field"><span>Note / theme</span><textarea id="pf-note" rows="2" maxlength="300"></textarea></label>
+    <div class="row"><label class="field" style="flex:1"><span>Latitude</span><input id="pf-lat" type="number"
+          step="any"></label>
+      <label class="field" style="flex:1"><span>Longitude</span><input id="pf-lng" type="number" step="any"></label>
+    </div>
+    <div class="row" style="margin-bottom:12px"><button class="btn alt sm" id="pf-pick">Pick on map</button><button
+        class="btn alt sm" id="pf-here">Use my location</button></div>
+    <div class="err" id="pf-err"></div>
+    <div class="row sp"><button class="btn alt sm" id="pf-cancel">Cancel</button><button class="btn sm"
+        id="pf-save">Save pandal</button></div>
+  </dialog>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    /* ===================================================================
+       1) PASTE YOUR SUPABASE VALUES HERE (Project Settings > API)
+       =================================================================== */
+    const SUPABASE_URL = "https://fwfepwszyzpehdlpbsna.supabase.co";       // e.g. https://abcdxyz.supabase.co
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3ZmVwd3N6eXpwZWhkbHBic25hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyODgzNDYsImV4cCI6MjEwNjg2NDM0Nn0.i6-wVTdjg3FoZ-MeFcZ3MD1MYUFbwvHaGL4WJZ1cQks";
+    /* =================================================================== */
+
+    const PHOTO_RADIUS_M = 150;                 // how close to a pandal a photo must be taken
+    const PUSH_EVERY_MS = 4000;                // live location upload rate
+    const LOG_EVERY_MS = 30000;               // audit trail rate
+    const STALE_MS = 90000;               // admin sees a friend as "not live" after this
+    const KOLKATA = [22.5726, 88.3639];
+    const ZONES = { north: "North", south: "South", central: "Central", east: "East", howrah: "Howrah", others: "Others" };
+
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const fmtDist = m => m < 1000 ? Math.round(m) + " m" : (m / 1000).toFixed(1) + " km";
+    const ago = t => { const s = Math.max(0, (Date.now() - new Date(t)) / 1000); return s < 60 ? Math.round(s) + "s ago" : s < 3600 ? Math.round(s / 60) + "m ago" : Math.round(s / 3600) + "h ago"; };
+    const fmtT = t => new Date(t).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    function dist(a, b) {
+      const R = 6371000, r = Math.PI / 180;
+      const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+      const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(x));
+    }
+    function toast(msg, ms = 3200) {
+      const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+      document.body.appendChild(t); setTimeout(() => t.remove(), ms);
+    }
+    const hue = id => { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
+
+    const S = {
+      user: null, profile: null, isAdmin: false,
+      pandals: [], people: {}, me: null, sharing: true,
+      lastPush: 0, lastLog: 0, friends: {}, zone: "all", q: "",
+      chatWith: null, unread: {}, pick: null, editing: null, sub: "friends"
+    };
+    let sb, map, meMarker, meCircle, pandalLayer, friendLayer, watchId, wakeLock;
+    const pandalMarkers = {}, friendMarkers = {};
+
+    function gate(name) {
+      ["g-setup", "g-join", "g-admin", "app"].forEach(id => $("#" + id).hidden = id !== name);
+    }
+
+    /* ===================== BOOT / AUTH ===================== */
+    async function boot() {
+      if (SUPABASE_URL.includes("PASTE") || SUPABASE_ANON_KEY.includes("PASTE")) return gate("g-setup");
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+      const { data: { session } } = await sb.auth.getSession();
+      if (location.hash === "#admin" && !session) return gate("g-admin");
+      if (!session) return gate("g-join");
+      S.user = session.user;
+      await afterAuth();
+    }
+
+    async function afterAuth() {
+      const { data: adm } = await sb.from("admins").select("user_id").eq("user_id", S.user.id).maybeSingle();
+      S.isAdmin = !!adm;
+      if (S.isAdmin) await sb.rpc("ensure_admin_profile");
+      const { data: p } = await sb.from("profiles").select("*").eq("id", S.user.id).maybeSingle();
+      if (!p) return gate("g-join");
+      S.profile = p;
+      startApp();
+    }
+
+    $("#j-go").onclick = async () => {
+      const name = $("#j-name").value.trim(), code = $("#j-code").value.trim(), err = $("#j-err");
+      err.textContent = "";
+      if (!name) return err.textContent = "Please enter your name.";
+      if (!code) return err.textContent = "Enter the join code the admin gave you.";
+      if (!$("#j-ok").checked) return err.textContent = "Please tick the box to agree.";
+      $("#j-go").disabled = true;
+      try {
+        let { data: { session } } = await sb.auth.getSession();
+        if (!session) {
+          const { data, error } = await sb.auth.signInAnonymously();
+          if (error) throw error;
+          session = data.session;
+        }
+        S.user = session.user;
+        const { error } = await sb.rpc("join_group", { p_name: name, p_code: code });
+        if (error) throw error;
+        await afterAuth();
+      } catch (e) { err.textContent = e.message || "Could not join."; }
+      $("#j-go").disabled = false;
+    };
+    $("#j-admin").onclick = () => gate("g-admin");
+    $("#a-back").onclick = () => gate("g-join");
+    $("#a-go").onclick = async () => {
+      const err = $("#a-err"); err.textContent = ""; $("#a-go").disabled = true;
+      try {
+        await sb.auth.signOut();
+        const { data, error } = await sb.auth.signInWithPassword({ email: $("#a-email").value.trim(), password: $("#a-pass").value });
+        if (error) throw error;
+        S.user = data.user;
+        await afterAuth();
+        if (!S.isAdmin) { await sb.auth.signOut(); throw new Error("This account is not an admin."); }
+      } catch (e) { err.textContent = e.message; gate("g-admin"); }
+      $("#a-go").disabled = false;
+    };
+
+    /* ===================== APP START ===================== */
+    async function startApp() {
+      gate("app");
+      $("#hdr-title").textContent = S.isAdmin ? "Pujo Parikrama · Admin" : "Hi, " + S.profile.name;
+      $("#nav-admin").hidden = !S.isAdmin;
+      $("#b-add").hidden = !S.isAdmin;
+      $("#b-friends").hidden = !S.isAdmin;
+      initMap();
+      await Promise.all([loadPeople(), loadPandals()]);
+      renderPandals(); renderChatPeople();
+      startGeo();
+      subscribe();
+      if (S.isAdmin) { loadFriends(); renderAdmin(); setInterval(refreshFriendStyles, 15000); }
+      loadPhotos();
+    }
+
+    function initMap() {
+      if (map) return;
+      map = L.map("map", { zoomControl: false, attributionControl: true }).setView(KOLKATA, 12);
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(map);
+      L.control.zoom({ position: "bottomleft" }).addTo(map);
+      pandalLayer = L.layerGroup().addTo(map);
+      friendLayer = L.layerGroup().addTo(map);
+      map.on("click", e => {
+        if (!S.pick) return;
+        const cb = S.pick; S.pick = null; $("#pickbar").hidden = true;
+        cb(e.latlng.lat, e.latlng.lng);
+      });
+    }
+
+    /* ===================== DATA ===================== */
+    async function loadPeople() {
+      const { data } = await sb.from("profiles").select("id,name");
+      (data || []).forEach(p => S.people[p.id] = p.name);
+    }
+    async function loadPandals() {
+      const { data, error } = await sb.from("pandals").select("*").order("name");
+      if (error) return toast(error.message);
+      S.pandals = data || [];
+      drawPandals();
+    }
+    function drawPandals() {
+      pandalLayer.clearLayers();
+      S.pandals.forEach(p => {
+        const icon = L.divIcon({ className: "", html: '<div class="pin pandal"><i>🪔</i></div>', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] });
+        const m = L.marker([p.lat, p.lng], { icon }).addTo(pandalLayer);
+        m.bindPopup(() => pandalPopup(p));
+        pandalMarkers[p.id] = m;
+      });
+    }
+    function pandalPopup(p) {
+      const el = document.createElement("div"); el.className = "pp";
+      const d = S.me ? dist(S.me, p) : null;
+      el.innerHTML = `<b>${esc(p.name)}</b><div class="muted">${esc(p.area || "")} ${p.zone ? "· " + esc(ZONES[p.zone] || p.zone) : ""}</div>
+    ${p.note ? `<p style="margin-top:6px">${esc(p.note)}</p>` : ""}
+    ${d != null ? `<div style="margin-top:6px">${fmtDist(d)} from you</div>` : ""}
+    <div class="row"><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking">Directions</a>
+    <button data-a="photo">Add photo</button>${S.isAdmin ? '<button data-a="edit">Edit</button>' : ""}</div>`;
+      el.querySelector('[data-a="photo"]').onclick = () => addPhotoFlow(p);
+      const e = el.querySelector('[data-a="edit"]'); if (e) e.onclick = () => openForm(p);
+      return el;
+    }
+
+    /* ===================== LIVE LOCATION ===================== */
+    function startGeo() {
+      if (!navigator.geolocation) return gps("bad", "No GPS");
+      watchId = navigator.geolocation.watchPosition(onPos, onGeoErr, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+      keepAwake();
+    }
+    async function keepAwake() { try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) { } }
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && S.user) { keepAwake(); pushLocation(true); }
+    });
+    function gps(cls, txt) { $("#gps-dot").className = "dot " + cls; $("#gps-txt").textContent = txt; }
+    function onGeoErr(e) {
+      if (e.code === 1) gps("bad", "Location blocked");
+      else gps("warn", "Searching GPS");
+    }
+    function onPos(pos) {
+      const c = pos.coords;
+      S.me = { lat: c.latitude, lng: c.longitude, acc: c.accuracy, heading: c.heading, speed: c.speed, t: pos.timestamp };
+      gps(c.accuracy <= 20 ? "ok" : c.accuracy <= 50 ? "warn" : "bad", "GPS ±" + Math.round(c.accuracy) + " m");
+      drawMe();
+      pushLocation(false);
+    }
+    function drawMe() {
+      const ll = [S.me.lat, S.me.lng];
+      if (!meMarker) {
+        meMarker = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div class="me"></div>', iconSize: [18, 18] }), zIndexOffset: 1000 }).addTo(map);
+        meCircle = L.circle(ll, { radius: S.me.acc, color: "#3b82f6", weight: 1, fillOpacity: .12 }).addTo(map);
+        map.setView(ll, 16);
+      } else { meMarker.setLatLng(ll); meCircle.setLatLng(ll).setRadius(S.me.acc); }
+    }
+    async function pushLocation(force) {
+      if (!S.sharing || !S.me || !S.user) return;
+      const now = Date.now();
+      if (!force && now - S.lastPush < PUSH_EVERY_MS) return;
+      S.lastPush = now;
+      const m = S.me;
+      const { error } = await sb.from("locations").upsert({
+        user_id: S.user.id, lat: m.lat, lng: m.lng, accuracy: m.acc,
+        heading: m.heading, speed: m.speed, updated_at: new Date(m.t || now).toISOString()
+      });
+      if (error) console.warn(error.message);
+      if (now - S.lastLog >= LOG_EVERY_MS) {
+        S.lastLog = now;
+        sb.from("location_log").insert({ user_id: S.user.id, lat: m.lat, lng: m.lng, accuracy: m.acc }).then(() => { });
+      }
+    }
+    $("#share-chip").onclick = async () => {
+      S.sharing = !S.sharing;
+      $("#share-dot").className = "dot " + (S.sharing ? "ok" : "bad");
+      $("#share-txt").textContent = S.sharing ? "Sharing" : "Paused";
+      if (S.sharing) { pushLocation(true); toast("Live location sharing is on."); }
+      else { await sb.from("locations").delete().eq("user_id", S.user.id); toast("Sharing paused. The admin no longer sees your live position."); }
+    };
+    $("#gps-chip").onclick = () => toast("Under 20 m is good. Move to open sky and keep the screen on for the best accuracy.");
+    $("#b-locate").onclick = () => { if (S.me) map.flyTo([S.me.lat, S.me.lng], 17); else toast("Still finding your location."); };
+
+    /* ===================== ADMIN: FRIENDS ON MAP ===================== */
+    async function loadFriends() {
+      const { data } = await sb.from("locations").select("*");
+      (data || []).forEach(upsertFriend);
+    }
+    function upsertFriend(l) {
+      if (l.user_id === S.user.id) return;
+      S.friends[l.user_id] = l;
+      const name = S.people[l.user_id] || "Friend";
+      const live = Date.now() - new Date(l.updated_at) < STALE_MS;
+      const html = `<div class="fr ${live ? "" : "stale"}" style="background:hsl(${hue(l.user_id)},75%,60%)">${esc(name[0].toUpperCase())}</div>`;
+      const icon = L.divIcon({ className: "", html, iconSize: [34, 34], iconAnchor: [17, 17] });
+      if (friendMarkers[l.user_id]) friendMarkers[l.user_id].setLatLng([l.lat, l.lng]).setIcon(icon).setTooltipContent(esc(name));
+      else {
+        friendMarkers[l.user_id] = L.marker([l.lat, l.lng], { icon }).addTo(friendLayer)
+          .bindTooltip(esc(name), { permanent: true, direction: "top", offset: [0, -16], className: "ftip" });
+        friendMarkers[l.user_id].bindPopup(() => friendPopup(l.user_id));
+      }
+      if (S.isAdmin && S.sub === "friends") renderAdmin();
+    }
+    function friendPopup(id) {
+      const l = S.friends[id]; const near = nearest(l);
+      return `<b>${esc(S.people[id] || "Friend")}</b><br>${ago(l.updated_at)} · ±${Math.round(l.accuracy || 0)} m${near ? `<br>Near ${esc(near.p.name)} (${fmtDist(near.d)})` : ""}`;
+    }
+    function refreshFriendStyles() { Object.values(S.friends).forEach(upsertFriend); }
+    function removeFriend(id) {
+      delete S.friends[id];
+      if (friendMarkers[id]) { friendLayer.removeLayer(friendMarkers[id]); delete friendMarkers[id]; }
+      if (S.sub === "friends") renderAdmin();
+    }
+    $("#b-friends").onclick = () => {
+      const pts = Object.values(S.friends).map(f => [f.lat, f.lng]);
+      if (S.me) pts.push([S.me.lat, S.me.lng]);
+      if (pts.length) map.fitBounds(pts, { padding: [60, 60], maxZoom: 17 }); else toast("No friends are live right now.");
+    };
+    function nearest(pt) {
+      let best = null;
+      S.pandals.forEach(p => { const d = dist(pt, p); if (!best || d < best.d) best = { p, d }; });
+      return best;
+    }
+
+    /* ===================== REALTIME ===================== */
+    function subscribe() {
+      const ch = sb.channel("pujo-" + S.user.id);
+      ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, onMsg);
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, p => {
+        if (p.new && p.new.id) { S.people[p.new.id] = p.new.name; renderChatPeople(); if (S.isAdmin) { refreshFriendStyles(); renderAdmin(); } }
+      });
+      ch.on("postgres_changes", { event: "*", schema: "public", table: "pandals" }, () => { loadPandals().then(renderPandals); });
+      if (S.isAdmin) ch.on("postgres_changes", { event: "*", schema: "public", table: "locations" }, p => {
+        if (p.eventType === "DELETE") removeFriend(p.old.user_id); else upsertFriend(p.new);
+      });
+      ch.subscribe();
+    }
+
+    /* ===================== NAV ===================== */
+    $$("#nav button").forEach(b => b.onclick = () => showTab(b.dataset.t));
+    function showTab(t) {
+      $$("#nav button").forEach(x => x.classList.toggle("on", x.dataset.t === t));
+      $$(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-" + t));
+      if (t === "map") setTimeout(() => map.invalidateSize(), 50);
+      if (t === "photos") loadPhotos();
+      if (t === "pandals") renderPandals();
+      if (t === "admin") renderAdmin();
+      if (t === "chat") { renderChatPeople(); }
+    }
+
+    /* ===================== PANDAL LIST ===================== */
+    $("#p-search").oninput = e => { S.q = e.target.value.toLowerCase(); renderPandals(); };
+    function renderPandals() {
+      const z = $("#p-zones");
+      z.innerHTML = ["all", ...Object.keys(ZONES)].map(k => `<button data-z="${k}" class="${S.zone === k ? "on" : ""}">${k === "all" ? "All" : ZONES[k]}</button>`).join("");
+      $$("button", z).forEach(b => b.onclick = () => { S.zone = b.dataset.z; renderPandals(); });
+      let list = S.pandals.filter(p => (S.zone === "all" || p.zone === S.zone) && (p.name + " " + (p.area || "")).toLowerCase().includes(S.q));
+      if (S.me) list = list.map(p => ({ ...p, _d: dist(S.me, p) })).sort((a, b) => a._d - b._d);
+      $("#p-list").innerHTML = list.length ? list.map(p => `<div class="card" data-id="${p.id}" style="cursor:pointer">
+      <div class="row sp"><h3>${esc(p.name)}</h3><span class="muted">${p._d != null ? fmtDist(p._d) : ""}</span></div>
+      <div class="muted">${esc(p.area || "")} ${p.zone ? "· " + esc(ZONES[p.zone] || p.zone) : ""}</div>
+      ${p.note ? `<div style="margin-top:4px;font-size:.92rem">${esc(p.note)}</div>` : ""}</div>`).join("")
+        : `<div class="muted">${S.pandals.length ? "No pandals match." : S.isAdmin ? "No pandals yet. Open the Map tab and tap + to add the first one." : "The admin has not added any pandals yet."}</div>`;
+      $$("#p-list .card").forEach(c => c.onclick = () => {
+        const p = S.pandals.find(x => x.id === c.dataset.id); showTab("map");
+        setTimeout(() => { map.flyTo([p.lat, p.lng], 17); pandalMarkers[p.id].openPopup(); }, 120);
+      });
+    }
+
+    /* ===================== PANDAL FORM (admin) ===================== */
+    $("#b-add").onclick = () => { showTab("map"); startPick(); };
+    function startPick() {
+      S.pick = (lat, lng) => openForm(null, lat, lng);
+      $("#pickbar").hidden = false;
+    }
+    $("#pick-cancel").onclick = () => { S.pick = null; $("#pickbar").hidden = true; };
+    function openForm(p, lat, lng) {
+      S.editing = p || null; map.closePopup();
+      $("#pf-title").textContent = p && p.id ? "Edit pandal" : "Add pandal";
+      $("#pf-name").value = p?.name || ""; $("#pf-area").value = p?.area || "";
+      $("#pf-zone").value = p?.zone || "others"; $("#pf-note").value = p?.note || "";
+      $("#pf-lat").value = (p?.lat ?? lat ?? "") === "" ? "" : Number(p?.lat ?? lat).toFixed(6);
+      $("#pf-lng").value = (p?.lng ?? lng ?? "") === "" ? "" : Number(p?.lng ?? lng).toFixed(6);
+      $("#pf-err").textContent = "";
+      $("#pform").showModal();
+    }
+    $("#pf-cancel").onclick = () => $("#pform").close();
+    $("#pf-pick").onclick = () => {
+      const keep = { name: $("#pf-name").value, area: $("#pf-area").value, zone: $("#pf-zone").value, note: $("#pf-note").value };
+      $("#pform").close(); showTab("map");
+      const base = S.editing ? { ...S.editing } : {};
+      S.pick = (lat, lng) => openForm({ ...base, ...keep, lat, lng }, lat, lng);
+      $("#pickbar").hidden = false;
+    };
+    $("#pf-here").onclick = () => {
+      if (!S.me) return $("#pf-err").textContent = "Your location is not available yet.";
+      $("#pf-lat").value = S.me.lat.toFixed(6); $("#pf-lng").value = S.me.lng.toFixed(6);
+    };
+    $("#pf-save").onclick = async () => {
+      const row = {
+        name: $("#pf-name").value.trim(), area: $("#pf-area").value.trim() || null,
+        zone: $("#pf-zone").value, note: $("#pf-note").value.trim() || null,
+        lat: parseFloat($("#pf-lat").value), lng: parseFloat($("#pf-lng").value)
+      };
+      const err = $("#pf-err");
+      if (!row.name) return err.textContent = "Enter the pandal name.";
+      if (!isFinite(row.lat) || !isFinite(row.lng)) return err.textContent = "Set the location: pick on the map or enter coordinates.";
+      const editId = S.editing && S.editing.id;
+      const q = editId ? sb.from("pandals").update(row).eq("id", editId) : sb.from("pandals").insert(row);
+      const { error } = await q;
+      if (error) return err.textContent = error.message;
+      $("#pform").close(); S.editing = null; toast("Pandal saved.");
+      await loadPandals(); renderPandals(); if (S.isAdmin) renderAdmin();
+    };
+
+    /* ===================== PHOTOS ===================== */
+    $("#ph-add").onclick = () => addPhotoFlow(null);
+    function addPhotoFlow(p) {
+      if (!S.me) return toast("Waiting for your location.");
+      if (!S.pandals.length) return toast("No pandals have been added yet.");
+      const target = p ? { p, d: dist(S.me, p) } : nearest(S.me);
+      if (target.d > PHOTO_RADIUS_M) return toast(`You are ${fmtDist(target.d)} from ${target.p.name}. Get within ${PHOTO_RADIUS_M} m to add a photo.`, 4500);
+      S.photoTarget = target; $("#file").value = ""; $("#file").click();
+    }
+    $("#file").onchange = async e => {
+      const f = e.target.files[0]; if (!f || !S.photoTarget) return;
+      const { p, d } = S.photoTarget; toast("Uploading…");
+      try {
+        const blob = await compress(f);
+        const path = `${S.user.id}/${Date.now()}.jpg`;
+        let r = await sb.storage.from("pandal-photos").upload(path, blob, { contentType: "image/jpeg" });
+        if (r.error) throw r.error;
+        r = await sb.from("photos").insert({ user_id: S.user.id, pandal_id: p.id, path, lat: S.me.lat, lng: S.me.lng, distance_m: d });
+        if (r.error) throw r.error;
+        toast("Photo saved at " + p.name); loadPhotos();
+      } catch (err) { toast("Upload failed: " + err.message, 5000); }
+    };
+    async function compress(file) {
+      const bmp = await createImageBitmap(file);
+      const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      return new Promise(res => c.toBlob(res, "image/jpeg", .82));
+    }
+    async function photoGrid(el, all) {
+      let q = sb.from("photos").select("*").order("created_at", { ascending: false }).limit(120);
+      if (!all) q = q.eq("user_id", S.user.id);
+      const { data, error } = await q;
+      if (error) { el.innerHTML = `<div class="muted">${esc(error.message)}</div>`; return; }
+      if (!data.length) { el.innerHTML = `<div class="muted" style="grid-column:1/-1">No photos yet.</div>`; return; }
+      const { data: urls } = await sb.storage.from("pandal-photos").createSignedUrls(data.map(x => x.path), 3600);
+      const map_ = Object.fromEntries((urls || []).map(u => [u.path, u.signedUrl]));
+      el.innerHTML = data.map(x => {
+        const pn = S.pandals.find(p => p.id === x.pandal_id)?.name || "Pandal";
+        return `<div class="ph"><a href="${esc(map_[x.path] || "#")}" target="_blank" rel="noopener"><img loading="lazy" src="${esc(map_[x.path] || "")}" alt=""></a>
+      <div>${all ? "<b>" + esc(S.people[x.user_id] || "?") + "</b><br>" : ""}${esc(pn)}<br>${fmtT(x.created_at)}</div></div>`;
+      }).join("");
+    }
+    function loadPhotos() { photoGrid($("#ph-grid"), false); }
+
+    /* ===================== CHAT ===================== */
+    function renderChatPeople() {
+      const others = Object.entries(S.people).filter(([id]) => id !== S.user?.id).sort((a, b) => a[1].localeCompare(b[1]));
+      $("#chat-people").innerHTML = others.length ? others.map(([id, n]) => `<div class="card row sp" data-id="${id}" style="cursor:pointer">
+      <h3>${esc(n)}</h3>${S.unread[id] ? `<span class="badge" style="position:static">${S.unread[id]}</span>` : ""}</div>`).join("")
+        : `<div class="muted">No friends have joined yet.</div>`;
+      $$("#chat-people .card").forEach(c => c.onclick = () => openThread(c.dataset.id));
+      const total = Object.values(S.unread).reduce((a, b) => a + b, 0);
+      $("#chat-badge").hidden = !total; $("#chat-badge").textContent = total;
+    }
+    async function openThread(id) {
+      S.chatWith = id; S.unread[id] = 0; renderChatPeople();
+      $("#chat-list").hidden = true; $("#chat-thread").hidden = false;
+      $("#chat-with").textContent = S.people[id] || "Friend";
+      const me = S.user.id;
+      const { data, error } = await sb.from("messages").select("*")
+        .or(`and(sender_id.eq.${me},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${me})`).order("created_at");
+      if (error) return toast(error.message);
+      $("#msgs").innerHTML = ""; data.forEach(addBubble);
+    }
+    function addBubble(m) {
+      const mine = m.sender_id === S.user.id;
+      const d = document.createElement("div"); d.className = "bub " + (mine ? "me" : "them");
+      d.innerHTML = `${esc(m.body)}<small>${fmtT(m.created_at)}</small>`;
+      const box = $("#msgs"); box.appendChild(d); box.scrollTop = box.scrollHeight;
+    }
+    $("#chat-back").onclick = () => { S.chatWith = null; $("#chat-thread").hidden = true; $("#chat-list").hidden = false; renderChatPeople(); };
+    async function sendMsg() {
+      const body = $("#m-in").value.trim(); if (!body || !S.chatWith) return;
+      $("#m-in").value = "";
+      const { data, error } = await sb.from("messages").insert({ sender_id: S.user.id, receiver_id: S.chatWith, body }).select().single();
+      if (error) return toast(error.message);
+      addBubble(data);
+    }
+    $("#m-send").onclick = sendMsg;
+    $("#m-in").onkeydown = e => { if (e.key === "Enter") sendMsg(); };
+    function onMsg(p) {
+      const m = p.new, me = S.user.id;
+      if (m.sender_id === me) return;                               // already shown on send
+      if (m.receiver_id === me) {
+        if (S.chatWith === m.sender_id && !$("#tab-chat").hidden && $("#tab-chat").classList.contains("on")) addBubble(m);
+        else { S.unread[m.sender_id] = (S.unread[m.sender_id] || 0) + 1; renderChatPeople(); toast("New message from " + (S.people[m.sender_id] || "a friend")); }
+      }
+      if (S.isAdmin && S.sub === "msgs") renderAdmin();
+    }
+
+    /* ===================== ADMIN PANEL ===================== */
+    $$("#ad-sub button").forEach(b => b.onclick = () => {
+      S.sub = b.dataset.s; $$("#ad-sub button").forEach(x => x.classList.toggle("on", x === b)); renderAdmin();
+    });
+    async function renderAdmin() {
+      if (!S.isAdmin || !$("#tab-admin").classList.contains("on")) return;
+      const body = $("#ad-body");
+      if (S.sub === "friends") {
+        const rows = Object.values(S.friends).sort((a, b) => (S.people[a.user_id] || "").localeCompare(S.people[b.user_id] || ""));
+        const members = Object.entries(S.people).filter(([id]) => id !== S.user.id);
+        body.innerHTML = `<div class="notice">Live positions are visible only to you. Friends see only themselves.</div>` +
+          (members.length ? members.map(([id, n]) => {
+            const l = S.friends[id]; const live = l && Date.now() - new Date(l.updated_at) < STALE_MS; const nr = l && nearest(l);
+            return `<div class="card"><div class="row sp"><h3>${esc(n)}</h3><span class="muted"><span class="dot ${live ? "ok" : "bad"}" style="display:inline-block"></span> ${l ? ago(l.updated_at) : "not sharing"}</span></div>
+          ${l ? `<div class="muted">±${Math.round(l.accuracy || 0)} m${nr ? " · near " + esc(nr.p.name) + " (" + fmtDist(nr.d) + ")" : ""}</div>` : ""}
+          <div class="row" style="margin-top:8px">${l ? `<button class="btn alt sm" data-loc="${id}">Show on map</button>` : ""}<button class="btn alt sm" data-ren="${id}">Rename</button></div></div>`;
+          }).join("") : `<div class="muted">Nobody has joined yet. Share the link and the join code.</div>`);
+        $$("[data-loc]", body).forEach(b => b.onclick = () => { showTab("map"); const l = S.friends[b.dataset.loc]; setTimeout(() => { map.flyTo([l.lat, l.lng], 18); friendMarkers[b.dataset.loc].openPopup(); }, 120); });
+        $$("[data-ren]", body).forEach(b => b.onclick = async () => {
+          const n = prompt("New name for " + S.people[b.dataset.ren], S.people[b.dataset.ren]); if (!n || !n.trim()) return;
+          const { error } = await sb.from("profiles").update({ name: n.trim() }).eq("id", b.dataset.ren);
+          if (error) toast(error.message); else { S.people[b.dataset.ren] = n.trim(); refreshFriendStyles(); renderAdmin(); renderChatPeople(); }
+        });
+      }
+      if (S.sub === "pandals") {
+        body.innerHTML = `<button class="btn" id="ad-add" style="margin-bottom:12px">Add a pandal</button>` +
+          (S.pandals.map(p => `<div class="card row sp"><div><h3>${esc(p.name)}</h3><div class="muted">${esc(p.area || "")} · ${esc(ZONES[p.zone] || p.zone)}</div></div>
+        <div class="row"><button class="btn alt sm" data-e="${p.id}">Edit</button><button class="btn alt sm" data-d="${p.id}">Delete</button></div></div>`).join("") || `<div class="muted">No pandals yet.</div>`);
+        $("#ad-add").onclick = () => { showTab("map"); startPick(); };
+        $$("[data-e]", body).forEach(b => b.onclick = () => openForm(S.pandals.find(p => p.id === b.dataset.e)));
+        $$("[data-d]", body).forEach(b => b.onclick = async () => {
+          const p = S.pandals.find(x => x.id === b.dataset.d); if (!confirm("Delete " + p.name + "?")) return;
+          const { error } = await sb.from("pandals").delete().eq("id", p.id);
+          if (error) return toast(error.message); await loadPandals(); renderPandals(); renderAdmin();
+        });
+      }
+      if (S.sub === "msgs") {
+        const { data, error } = await sb.from("messages").select("*").order("created_at", { ascending: false }).limit(300);
+        if (error) return body.innerHTML = `<div class="muted">${esc(error.message)}</div>`;
+        body.innerHTML = `<div class="notice">Every private message, newest first. Messages cannot be deleted by friends.</div>` +
+          (data.map(m => `<div class="card"><div class="muted"><b style="color:var(--ivory)">${esc(S.people[m.sender_id] || "?")}</b> to <b style="color:var(--ivory)">${esc(S.people[m.receiver_id] || "?")}</b> · ${fmtT(m.created_at)}</div><div style="white-space:pre-wrap;margin-top:4px">${esc(m.body)}</div></div>`).join("") || `<div class="muted">No messages yet.</div>`);
+      }
+      if (S.sub === "photos") {
+        body.innerHTML = `<div class="notice">Every photo from every friend.</div><div class="grid" id="ad-ph"></div>`;
+        photoGrid($("#ad-ph"), true);
+      }
+      if (S.sub === "export") {
+        body.innerHTML = `<div class="notice">Download the full audit record as spreadsheet files.</div>
+      <button class="btn alt" data-x="location_log" style="margin-bottom:10px">Location history (CSV)</button>
+      <button class="btn alt" data-x="messages" style="margin-bottom:10px">All messages (CSV)</button>
+      <button class="btn alt" data-x="photos">Photo records (CSV)</button>`;
+        $$("[data-x]", body).forEach(b => b.onclick = () => exportCSV(b.dataset.x, b));
+      }
+    }
+    async function exportCSV(table, btn) {
+      btn.disabled = true; let all = [], from = 0;
+      const order = table === "location_log" ? "at" : "created_at";
+      for (; ;) {
+        const { data, error } = await sb.from(table).select("*").order(order).range(from, from + 999);
+        if (error) { toast(error.message); break; }
+        all = all.concat(data); if (data.length < 1000) break; from += 1000;
+      }
+      btn.disabled = false;
+      if (!all.length) return toast("Nothing to export yet.");
+      all = all.map(r => { const o = { ...r }; if (o.user_id) o.name = S.people[o.user_id] || ""; if (o.sender_id) { o.sender = S.people[o.sender_id] || ""; o.receiver = S.people[o.receiver_id] || ""; } return o; });
+      const cols = Object.keys(all[0]);
+      const csv = [cols.join(","), ...all.map(r => cols.map(c => `"${String(r[c] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+      a.download = `pujo_${table}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    }
+
+    boot();
+  </script>
+</body>
+
+</html>
